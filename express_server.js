@@ -6,7 +6,10 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
-function generateRandomString() {}
+function generateRandomString() {
+  return Math.random().toString(36).slice(2);
+}
+console.log(generateRandomString());
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
