@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/zaindewsi/TinyApp#readme",
   "dependencies": {
+    "ejs": "^3.1.6",
     "express": "^4.17.1"
   }
 }
-
