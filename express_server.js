@@ -5,6 +5,9 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cookieParser());
+
 app.set("view engine", "ejs");
 
 const generateRandomString = () => Math.random().toString(36).substr(2, 6);
