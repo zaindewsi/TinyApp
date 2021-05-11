@@ -18,6 +18,7 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+    <% if(!username) {%>
     <form class="form-inline" method="POST" action="/login">
       <input
         type="text"
@@ -27,5 +28,8 @@
       />
       <button type="submit" class="btn btn-primary">Login</button>
     </form>
+    <% } else {%>
+    <h1><%= username %></h1>
+    <% } %>
   </nav>
 </header>
