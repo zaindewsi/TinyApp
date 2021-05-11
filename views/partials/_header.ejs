@@ -25,11 +25,15 @@
         placeholder="Username"
         name="username"
         class="form-control"
+        style="margin-right: 1em"
       />
       <button type="submit" class="btn btn-primary">Login</button>
     </form>
     <% } else {%>
-    <h1><%= username %></h1>
+    <p style="margin: auto 1em">Logged in as: <%= username %></p>
+    <form class="form-inline" method="POST" action="/logout">
+      <button type="submit" class="btn btn-outline-dark">Logout</button>
+    </form>
     <% } %>
   </nav>
 </header>
