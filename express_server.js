@@ -8,6 +8,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cookieParser());
 
+app.use(express.static("public"));
+
 app.set("view engine", "ejs");
 
 const generateRandomString = () => Math.random().toString(36).substr(2, 6);
