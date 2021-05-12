@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
-const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const {
   generateRandomString,
@@ -9,10 +8,8 @@ const {
   getUser,
 } = require("./helper-functions/helper-functions");
 
-app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
 app.use(express.static("public"));
 
 app.set("view engine", "ejs");
