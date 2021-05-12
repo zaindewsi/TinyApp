@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const {
   generateRandomString,
   isUser,
+  getUser,
 } = require("./helper-functions/helper-functions");
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -85,10 +86,23 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/");
 });
 
-app.post("/login", (req, res) => {
-  res.cookie("user_id", req.body.user_id);
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies["user_id"]],
+  };
 
-  res.redirect("/");
+  res.render("urls_login", templateVars);
+});
+
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+
+  const user = getUser(users, email, password);
+
+  if (user) {
+    res.cookie("user_id", user);
+    res.redirect("/");
+  } else res.status(403).redirect("/login");
 });
 
 app.post("/logout", (req, res) => {
@@ -100,9 +114,15 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) return res.status(400).redirect("/register");
+  if (!email || !password) {
+    console.log("missing field");
+    return res.status(400).redirect("/register");
+  }
 
-  if (isUser(users, email)) return res.status(400).redirect("/register");
+  if (isUser(users, email)) {
+    console.log("user already exists");
+    return res.status(400).redirect("/register");
+  }
 
   const id = generateRandomString();
 

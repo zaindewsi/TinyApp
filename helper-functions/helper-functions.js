@@ -7,4 +7,15 @@ const isUser = (users, email) => {
   return false;
 };
 
-module.exports = { generateRandomString, isUser };
+const getUser = (users, email, password) => {
+  for (let id in users) {
+    if (users[id].email === email) {
+      if (users[id].password === password) {
+        return id;
+      } else console.log("invalid password");
+    } else console.log("invalid email");
+  }
+  return null;
+};
+
+module.exports = { generateRandomString, isUser, getUser };
