@@ -13,6 +13,7 @@ app.use(express.static("public"));
 app.set("view engine", "ejs");
 
 const generateRandomString = () => Math.random().toString(36).substr(2, 6);
+const users = {};
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -89,6 +90,31 @@ app.post("/logout", (req, res) => {
   res.clearCookie("username");
 
   res.redirect("/");
+});
+
+app.post("/register", (req, res) => {
+  const { name, email, password } = req.body;
+
+  const id = generateRandomString();
+
+  for (let key in users) {
+    if (users[key].email === email) {
+      console.log("User already exts");
+      return res.redirect("/register");
+    }
+  }
+
+  const newUser = {
+    id,
+    email,
+    password,
+  };
+
+  users[id] = newUser;
+
+  res.cookie("user_id", id);
+
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
