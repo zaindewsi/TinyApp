@@ -3,6 +3,10 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const {
+  generateRandomString,
+  isUser,
+} = require("./helper-functions/helper-functions");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -12,7 +16,6 @@ app.use(express.static("public"));
 
 app.set("view engine", "ejs");
 
-const generateRandomString = () => Math.random().toString(36).substr(2, 6);
 const users = {};
 
 const urlDatabase = {
@@ -95,16 +98,13 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const { name, email, password } = req.body;
+  const { email, password } = req.body;
+
+  if (!email || !password) return res.status(400).redirect("/register");
+
+  if (isUser(users, email)) return res.status(400).redirect("/register");
 
   const id = generateRandomString();
-
-  for (let key in users) {
-    if (users[key].email === email) {
-      console.log("User already exts");
-      return res.redirect("/register");
-    }
-  }
 
   const newUser = {
     id,
