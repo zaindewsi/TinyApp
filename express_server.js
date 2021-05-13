@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
 const {
   generateRandomString,
@@ -11,7 +11,12 @@ const {
 } = require("./helper-functions/helper-functions");
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1", "key2"],
+  })
+);
 app.use(express.static("public"));
 
 app.set("view engine", "ejs");
@@ -32,24 +37,24 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.redirect("/login");
   }
 
-  let myURLS = getUserUrls(urlDatabase, req.cookies["user_id"]);
+  let myURLS = getUserUrls(urlDatabase, req.session["user_id"]);
 
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session["user_id"]],
     urls: myURLS,
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  if (!users[req.cookies["user_id"]]) return res.redirect("/login");
+  if (!users[req.session["user_id"]]) return res.redirect("/login");
 
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session["user_id"]],
   };
 
   res.render("urls_new", templateVars);
@@ -58,12 +63,12 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]) return res.redirect("/");
 
-  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.shortURL].userID !== req.session["user_id"]) {
     return res.status(403).redirect("/");
   }
 
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session["user_id"]],
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
   };
@@ -74,7 +79,7 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"],
+    userID: req.session["user_id"],
   };
   res.redirect(`/urls/${shortURL}`);
 });
@@ -85,7 +90,9 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+  if (
+    urlDatabase[req.params.shortURL].userID !== req.coosessionkies["user_id"]
+  ) {
     return res.status(403).redirect("/");
   }
 
@@ -95,7 +102,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.shortURL].userID !== req.session["user_id"]) {
     return res.status(403).redirect("/");
   }
   delete urlDatabase[req.params.id];
@@ -107,7 +114,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.get("/register", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session["user_id"]],
   };
   res.render("register", templateVars);
 });
@@ -136,7 +143,7 @@ app.post("/register", (req, res) => {
 
   users[id] = newUser;
 
-  res.cookie("user_id", id);
+  req.session.user_id = id;
 
   res.redirect("/urls");
 });
@@ -144,7 +151,7 @@ app.post("/register", (req, res) => {
 // Login
 app.get("/login", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session["user_id"]],
   };
 
   res.render("login", templateVars);
@@ -156,7 +163,7 @@ app.post("/login", (req, res) => {
   const user = getUser(users, email, password);
 
   if (user) {
-    res.cookie("user_id", user);
+    req.session.user_id = user;
     return res.redirect("/");
   } else return res.status(403).redirect("/login");
 });
@@ -164,7 +171,7 @@ app.post("/login", (req, res) => {
 // Logout
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
 
   res.redirect("/");
 });
