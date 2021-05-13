@@ -3,12 +3,16 @@ const app = express();
 const PORT = 8080;
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
+const methodOverride = require("method-override");
 const {
   generateRandomString,
   getUserByEmail,
   getUser,
   getUserUrls,
+  currentDate,
 } = require("./helper-functions/helper-functions");
+
+// Middleware
 
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -18,7 +22,7 @@ app.use(
   })
 );
 app.use(express.static("public"));
-
+app.use(methodOverride("_method"));
 app.set("view engine", "ejs");
 
 const users = {};
@@ -38,41 +42,41 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (!users[req.session["user_id"]]) {
-    return res.redirect("/login");
+    return res.redirect("/login?redirect=true");
   }
+
+  let denied = req.query.denied ? true : false;
+  let noURL = req.query.noURL ? true : false;
 
   let myURLS = getUserUrls(urlDatabase, req.session["user_id"]);
 
   const templateVars = {
     user: users[req.session["user_id"]],
     urls: myURLS,
+    denied,
+    noURL,
   };
   res.render("urls_index", templateVars);
 });
 
+// create new url
+
 app.get("/urls/new", (req, res) => {
-  if (!users[req.session["user_id"]]) return res.redirect("/login");
+  if (!users[req.session["user_id"]])
+    return res.redirect("/login?redirect=true");
 
-  const templateVars = {
-    user: users[req.session["user_id"]],
-  };
+  let redirect;
 
-  res.render("urls_new", templateVars);
-});
-
-app.get("/urls/:shortURL", (req, res) => {
-  if (!urlDatabase[req.params.shortURL]) return res.redirect("/");
-
-  if (urlDatabase[req.params.shortURL].userID !== req.session["user_id"]) {
-    return res.status(403).redirect("/");
+  if (req.query.redirect) {
+    redirect = JSON.parse(req.query.redirect);
   }
 
   const templateVars = {
     user: users[req.session["user_id"]],
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
+    redirect,
   };
-  res.render("urls_show", templateVars);
+
+  res.render("urls_new", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -80,20 +84,35 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
     userID: req.session["user_id"],
+    created: currentDate(),
   };
   res.redirect(`/urls/${shortURL}`);
 });
 
-app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+app.get("/urls/:shortURL", (req, res) => {
+  if (!urlDatabase[req.params.shortURL])
+    return res.redirect("/urls?noURL=true");
+
+  if (urlDatabase[req.params.shortURL].userID !== req.session["user_id"]) {
+    return res.status(403).redirect("/urls?denied=true");
+  }
+
+  const templateVars = {
+    user: users[req.session["user_id"]],
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    created: urlDatabase[req.params.shortURL].created,
+  };
+  res.render("urls_show", templateVars);
 });
 
-app.post("/urls/:id", (req, res) => {
-  if (
-    urlDatabase[req.params.shortURL].userID !== req.coosessionkies["user_id"]
-  ) {
+app.put("/urls/:id", (req, res) => {
+  if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
     return res.status(403).redirect("/");
+  }
+
+  if (!urlDatabase[req.params.id]) {
+    return res.status(404).redirect("/urls");
   }
 
   urlDatabase[req.params.id].longURL = req.body.longURL;
@@ -101,9 +120,25 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/");
 });
 
-app.post("/urls/:id/delete", (req, res) => {
-  if (urlDatabase[req.params.shortURL].userID !== req.session["user_id"]) {
-    return res.status(403).redirect("/");
+app.get("/u/:shortURL", (req, res) => {
+  if (!urlDatabase[req.params.shortURL]) {
+    return res.send(
+      "<h1>Sorry, that URL does not exist</h1><p><a href='/'>Go back</a></p>"
+    );
+  }
+
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+
+  if (longURL.includes("http")) {
+    res.redirect(longURL);
+  } else {
+    res.redirect(`https://${longURL}`);
+  }
+});
+
+app.delete("/urls/:id", (req, res) => {
+  if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
+    return res.status(403).redirect("/urls?denied=true");
   }
   delete urlDatabase[req.params.id];
 
@@ -113,8 +148,14 @@ app.post("/urls/:id/delete", (req, res) => {
 //Register
 
 app.get("/register", (req, res) => {
+  if (users[req.session["user_id"]]) {
+    return res.redirect("/urls");
+  }
+  let exists = req.query.exists ? true : false;
+
   const templateVars = {
     user: users[req.session["user_id"]],
+    exists,
   };
   res.render("register", templateVars);
 });
@@ -124,13 +165,11 @@ app.post("/register", (req, res) => {
   const password = bcrypt.hashSync(req.body.password, 10);
 
   if (!email || !password) {
-    console.log("missing field");
     return res.status(400).redirect("/register");
   }
 
   if (getUserByEmail(email, users)) {
-    console.log("user already exists");
-    return res.status(400).redirect("/register");
+    return res.status(400).redirect("/register?exists=true");
   }
 
   const id = generateRandomString();
@@ -150,22 +189,36 @@ app.post("/register", (req, res) => {
 
 // Login
 app.get("/login", (req, res) => {
+  if (users[req.session["user_id"]]) {
+    return res.redirect("/urls");
+  }
+
+  let redirect;
+  let loginFailed;
+
+  if (req.query.redirect) {
+    redirect = JSON.parse(req.query.redirect);
+  }
+  if (req.query.loginFailed) {
+    loginFailed = JSON.parse(req.query.loginFailed);
+  }
+
   const templateVars = {
     user: users[req.session["user_id"]],
+    redirect,
+    loginFailed,
   };
-
   res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-
   const user = getUser(users, email, password);
 
   if (user) {
     req.session.user_id = user;
     return res.redirect("/");
-  } else return res.status(403).redirect("/login");
+  } else return res.status(403).redirect("/login?loginFailed=true");
 });
 
 // Logout

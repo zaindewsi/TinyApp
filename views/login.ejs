@@ -1,6 +1,23 @@
 <%- include('partials/_header') %>
+
+<% if (loginFailed){ %>
+  <div class="alert alert-danger" role="alert">
+    <h4 style="text-align: center;">Incorrect email/password</h4>
+  </div>
+<%} %>
+
+<% if(redirect) {%>
+  <div class="alert alert-primary" role="alert">
+    <h4 style="text-align: center;">You must login to use TinyApp</h4>
+  </div>
+<% } %>
+
+
+
 <main class="form jumbotron">
+  
   <h3 class="heading">Login</h3>
+ 
   <form action="/login" method="POST" class="login-form">
     <div class="form-group">
       <input

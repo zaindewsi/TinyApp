@@ -1,11 +1,27 @@
 <%- include('partials/_header') %>
     <main class = "jumbotron"style="margin: 1em">
+
+      <% if(noURL) {%>
+        <div class="alert alert-danger" role="alert">
+          <h4 style="text-align: center;">
+            Sorry, that shortURL does not exist.
+          </h4>
+        </div>
+      <% } %>
+      <% if(denied) {%>
+        <div class="alert alert-danger" role="alert">
+          <h4 style="text-align: center;">
+            Sorry, that shortURL does not belong to you.
+          </h4>
+        </div>
+      <% } %>
       <h3 class="heading">My URLs</h3>
       <table class="table">
         <thead>
           <tr>
             <th scope="col">Short URL</th>
             <th scope="col">Long URL</th>
+            <th scope="col">Date Created</th>
             <th scope="col">Edit</th>
             <th scope="col">Delete</th>
           </tr>
@@ -13,15 +29,16 @@
         <tbody>
           <% for(let url in urls) { %>
           <tr>
-            <td><%= url %></td>
+            <td><a target="_blank" href="/u/<%= url %>"><%= url %></a></td>
             <td><%= urls[url].longURL %></td>
+            <td><%= urls[url].created %></td>
             <td>
               <a href="/urls/<%=url%>">
                 <button class="btn btn-outline-primary">Edit</button>
               </a>
             </td>
             <td>
-              <form method="POST" action="/urls/<%=url%>/delete">
+              <form method="POST" action="/urls/<%=url%>?_method=DELETE">
                 <button class="btn btn-outline-danger">Delete</button>
               </form>
             </td>

@@ -1,7 +1,12 @@
 <%- include('./partials/_header') %>
 
     <main class="form jumbotron">
-      <h3 class="heading">Register your Account</h3>
+      <h3 class="heading">Register</h3>
+      <% if(exists) {%>
+        <div class="alert alert-danger" role="alert">
+          <h4>A user is already registered with this email. If this is you, please login <a href="/login">here</a> </h4>
+        </div>
+      <%}%>
       <form action="/register" method="POST">
         <div class="form-group">
           <input
@@ -9,6 +14,7 @@
             type="email"
             name="email"
             placeholder="Email"
+            required
           />
         </div>
         <div class="form-group">
@@ -17,9 +23,10 @@
             type="password"
             name="password"
             placeholder="Password"
+            required
           />
         </div>
-        <button type="submit" class="btn btn-primary">Register Now</button>
+        <button type="submit" class="btn btn-primary">Register</button>
       </form>
     </main>
   </body>
