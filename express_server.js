@@ -15,7 +15,11 @@ app.use(express.static("public"));
 
 app.set("view engine", "ejs");
 
-const users = {};
+const users = {
+  id: "h1f4yz",
+  email: "z@d.com",
+  password: "123",
+};
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -36,6 +40,7 @@ app.get("/urls", (req, res) => {
   }
 
   let myURLS = getUserUrls(urlDatabase, req.cookies["user_id"]);
+  console.log(myURLS);
 
   const templateVars = {
     user: users[req.cookies["user_id"]],
@@ -70,12 +75,12 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const randomURL = generateRandomString();
-  urlDatabase[randomURL] = {
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = {
     longURL: req.body.longURL,
     userID: req.cookies["user_id"],
   };
-  res.redirect(`/urls/${randomURL}`);
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/u/:shortURL", (req, res) => {
