@@ -3,14 +3,14 @@
 
       <% if(noURL) {%>
         <div class="alert alert-danger" role="alert">
-          <h4 style="text-align: center;">
+          <h4 class="center">
             Sorry, that shortURL does not exist.
           </h4>
         </div>
       <% } %>
       <% if(denied) {%>
         <div class="alert alert-danger" role="alert">
-          <h4 style="text-align: center;">
+          <h4 class="center">
             Sorry, that shortURL does not belong to you.
           </h4>
         </div>
@@ -64,4 +64,5 @@
       crossorigin="anonymous"
     ></script>
   </body>
+  <%- include('partials/_footer') %>
 </html>

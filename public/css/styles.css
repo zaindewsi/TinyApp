@@ -7,3 +7,11 @@
 .heading {
   font-size: 4em;
 }
+
+.center {
+  text-align: center;
+}
+
+.margin {
+  margin: 0.5em;
+}

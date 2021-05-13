@@ -1,6 +1,5 @@
 const express = require("express");
 const app = express();
-const PORT = 8080;
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
 const methodOverride = require("method-override");
@@ -11,8 +10,6 @@ const {
   getUserUrls,
   currentDate,
 } = require("./helper-functions/helper-functions");
-
-// Middleware
 
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -25,13 +22,11 @@ app.use(express.static("public"));
 app.use(methodOverride("_method"));
 app.set("view engine", "ejs");
 
+const PORT = 8080;
 const users = {};
+const urlDatabase = {};
 
-const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" },
-};
-
+//main pages
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
@@ -41,17 +36,17 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!users[req.session["user_id"]]) {
+  if (!users[req.session["userID"]]) {
     return res.redirect("/login?redirect=true");
   }
 
   let denied = req.query.denied ? true : false;
   let noURL = req.query.noURL ? true : false;
 
-  let myURLS = getUserUrls(urlDatabase, req.session["user_id"]);
+  let myURLS = getUserUrls(urlDatabase, req.session["userID"]);
 
   const templateVars = {
-    user: users[req.session["user_id"]],
+    user: users[req.session["userID"]],
     urls: myURLS,
     denied,
     noURL,
@@ -62,7 +57,7 @@ app.get("/urls", (req, res) => {
 // create new url
 
 app.get("/urls/new", (req, res) => {
-  if (!users[req.session["user_id"]])
+  if (!users[req.session["userID"]])
     return res.redirect("/login?redirect=true");
 
   let redirect;
@@ -72,7 +67,7 @@ app.get("/urls/new", (req, res) => {
   }
 
   const templateVars = {
-    user: users[req.session["user_id"]],
+    user: users[req.session["userID"]],
     redirect,
   };
 
@@ -83,22 +78,23 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
-    userID: req.session["user_id"],
+    userID: req.session["userID"],
     created: currentDate(),
   };
   res.redirect(`/urls/${shortURL}`);
 });
 
+//view short url page
 app.get("/urls/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL])
     return res.redirect("/urls?noURL=true");
 
-  if (urlDatabase[req.params.shortURL].userID !== req.session["user_id"]) {
+  if (urlDatabase[req.params.shortURL].userID !== req.session["userID"]) {
     return res.status(403).redirect("/urls?denied=true");
   }
 
   const templateVars = {
-    user: users[req.session["user_id"]],
+    user: users[req.session["userID"]],
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
     created: urlDatabase[req.params.shortURL].created,
@@ -107,7 +103,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.put("/urls/:id", (req, res) => {
-  if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
+  if (urlDatabase[req.params.id].userID !== req.session["userID"]) {
     return res.status(403).redirect("/");
   }
 
@@ -120,6 +116,7 @@ app.put("/urls/:id", (req, res) => {
   res.redirect("/");
 });
 
+//Redirect to long url
 app.get("/u/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]) {
     return res.send(
@@ -137,7 +134,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.delete("/urls/:id", (req, res) => {
-  if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
+  if (urlDatabase[req.params.id].userID !== req.session["userID"]) {
     return res.status(403).redirect("/urls?denied=true");
   }
   delete urlDatabase[req.params.id];
@@ -146,15 +143,14 @@ app.delete("/urls/:id", (req, res) => {
 });
 
 //Register
-
 app.get("/register", (req, res) => {
-  if (users[req.session["user_id"]]) {
+  if (users[req.session["userID"]]) {
     return res.redirect("/urls");
   }
   let exists = req.query.exists ? true : false;
 
   const templateVars = {
-    user: users[req.session["user_id"]],
+    user: users[req.session["userID"]],
     exists,
   };
   res.render("register", templateVars);
@@ -182,14 +178,14 @@ app.post("/register", (req, res) => {
 
   users[id] = newUser;
 
-  req.session.user_id = id;
+  req.session.userID = id;
 
   res.redirect("/urls");
 });
 
 // Login
 app.get("/login", (req, res) => {
-  if (users[req.session["user_id"]]) {
+  if (users[req.session["userID"]]) {
     return res.redirect("/urls");
   }
 
@@ -204,7 +200,7 @@ app.get("/login", (req, res) => {
   }
 
   const templateVars = {
-    user: users[req.session["user_id"]],
+    user: users[req.session["userID"]],
     redirect,
     loginFailed,
   };
@@ -216,13 +212,12 @@ app.post("/login", (req, res) => {
   const user = getUser(users, email, password);
 
   if (user) {
-    req.session.user_id = user;
+    req.session.userID = user;
     return res.redirect("/");
   } else return res.status(403).redirect("/login?loginFailed=true");
 });
 
 // Logout
-
 app.post("/logout", (req, res) => {
   req.session = null;
 
