@@ -1,8 +1,11 @@
+const bcrypt = require("bcrypt");
 const generateRandomString = () => Math.random().toString(36).substr(2, 6);
 
-const isUser = (users, email) => {
-  for (let key in users) {
-    if (users[key].email === email) return true;
+const getUserByEmail = (email, users) => {
+  for (let name in users) {
+    if (users[name].email === email) {
+      return true;
+    }
   }
   return false;
 };
@@ -10,12 +13,12 @@ const isUser = (users, email) => {
 const getUser = (users, email, password) => {
   for (let id in users) {
     if (users[id].email === email) {
-      if (users[id].password === password) {
+      if (bcrypt.compareSync(password, users[id].password)) {
         return id;
       } else console.log("invalid password");
     } else console.log("invalid email");
   }
-  return null;
+  return false;
 };
 
 const getUserUrls = (urlDatabase, userID) => {
@@ -28,4 +31,9 @@ const getUserUrls = (urlDatabase, userID) => {
   return urls;
 };
 
-module.exports = { generateRandomString, isUser, getUser, getUserUrls };
+module.exports = {
+  generateRandomString,
+  getUser,
+  getUserUrls,
+  getUserByEmail,
+};

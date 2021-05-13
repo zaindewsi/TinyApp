@@ -5,7 +5,7 @@ const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const {
   generateRandomString,
-  isUser,
+  getUserByEmail,
   getUser,
   getUserUrls,
 } = require("./helper-functions/helper-functions");
@@ -16,11 +16,7 @@ app.use(express.static("public"));
 
 app.set("view engine", "ejs");
 
-const users = {
-  id: "h1f4yz",
-  email: "z@d.com",
-  password: "123",
-};
+const users = {};
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -41,7 +37,6 @@ app.get("/urls", (req, res) => {
   }
 
   let myURLS = getUserUrls(urlDatabase, req.cookies["user_id"]);
-  console.log(myURLS);
 
   const templateVars = {
     user: users[req.cookies["user_id"]],
@@ -118,14 +113,15 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email;
+  const password = bcrypt.hashSync(req.body.password, 10);
 
   if (!email || !password) {
     console.log("missing field");
     return res.status(400).redirect("/register");
   }
 
-  if (isUser(users, email)) {
+  if (getUserByEmail(email, users)) {
     console.log("user already exists");
     return res.status(400).redirect("/register");
   }
