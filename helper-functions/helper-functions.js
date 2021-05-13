@@ -18,4 +18,14 @@ const getUser = (users, email, password) => {
   return null;
 };
 
-module.exports = { generateRandomString, isUser, getUser };
+const getUserUrls = (urlDatabase, userID) => {
+  let urls = {};
+  for (let key in urlDatabase) {
+    if (urlDatabase[key].userID === userID) {
+      urls[key] = urlDatabase[key];
+    }
+  }
+  return urls;
+};
+
+module.exports = { generateRandomString, isUser, getUser, getUserUrls };
